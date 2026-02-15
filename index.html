@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Divisions Escolars - Final</title>
+    <title>Divisions Escolars - Solucionari Complet</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; padding: 20px; }
         .card { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 100%; max-width: 950px; text-align: center; }
@@ -162,7 +162,6 @@
         let decimalStr = "";
         for (let i = 0; i < decDigits; i++) {
             if (i === decDigits - 1) {
-                // Evitem que l'últim decimal siga 0 per no perdre longitud visual
                 decimalStr += Math.floor(Math.random() * 9) + 1; 
             } else {
                 decimalStr += Math.floor(Math.random() * 10);
@@ -213,6 +212,7 @@
 
             const msg = document.getElementById('msg');
             
+            // Comprovar resultat
             if (!isNaN(userVal) && Math.abs(userVal - correctVal) < 0.0000001) {
                 msg.innerText = "¡Excel·lent! Resposta correcta. 🎉";
                 msg.style.color = "#2ecc71";
@@ -229,13 +229,12 @@
         }
     }
 
-    // --- MOTOR MATEMÀTIC DE LA DIVISIÓ ---
+    // --- MOTOR MATEMÀTIC ---
     function simulateDivision(dividend, divisor) {
         const divStrFull = dividend.toString();
         let digits = [];
         let decimalPos = -1;
 
-        // Convertir a array de dígits i detectar coma
         for (let i = 0; i < divStrFull.length; i++) {
             if (divStrFull[i] === '.') {
                 decimalPos = i; 
@@ -246,60 +245,55 @@
 
         let steps = [];
         let quotientStr = "";
+        
         let pointer = 0;
         let currentVal = digits[0]; 
 
-        // -- PAS PREVI: AGRUPAMENT INICIAL --
-        // Si el primer dígit és menor que el divisor i tenim més números abans de la coma,
-        // agafem dos dígits d'entrada.
+        // AGRUPAMENT INICIAL (ex: 367 / 4 -> agafa 36)
         const digitsBeforeDecimal = (decimalPos === -1) ? digits.length : decimalPos;
         
         if (currentVal < divisor && digitsBeforeDecimal > 1) {
-            pointer++;
+            pointer++; 
             currentVal = (currentVal * 10) + digits[pointer];
         }
 
-        // -- BUCLE PRINCIPAL --
-        while (pointer < digits.length) {
-            
-            // Càlcul
+        while (true) {
             let qDigit = Math.floor(currentVal / divisor);
             let product = qDigit * divisor;
             let remainder = currentVal - product;
 
-            steps.push({
-                currentVal: currentVal,
+            quotientStr += qDigit;
+
+            let currentStep = {
+                colIndex: pointer, 
                 qDigit: qDigit,
                 product: product,
                 remainder: remainder,
-                colIndex: pointer
-            });
+                currentVal: currentVal
+            };
 
-            quotientStr += qDigit;
-
-            // Preparar següent pas
             pointer++;
-            
-            // Comprovar si hem de posar coma AL QUOCIENT
-            // Si hem passat la posició decimal original
+
+            // Coma
             if (decimalPos !== -1 && pointer === decimalPos) {
-                 if (quotientStr === "") quotientStr += "0";
+                 if (quotientStr === "") quotientStr += "0"; 
                  if (!quotientStr.includes('.')) quotientStr += ".";
             }
 
-            // Si ja no queden dígits, acabem
-            if (pointer >= digits.length) break;
+            // Fi?
+            if (pointer >= digits.length) {
+                steps.push(currentStep);
+                break;
+            }
 
-            // Baixar següent xifra
             let nextDigit = digits[pointer];
-            
-            // Guardar quina xifra baixa per dibuixar-la després
-            steps[steps.length - 1].droppedDigit = nextDigit;
+            currentStep.droppedDigit = nextDigit;
+            steps.push(currentStep);
 
             currentVal = (remainder * 10) + nextDigit;
         }
 
-        // Neteja final (treure 0 a l'esquerra si no és 0.xx)
+        // Neteja
         if (quotientStr.length > 1 && quotientStr.startsWith('0') && quotientStr[1] !== '.') {
             quotientStr = quotientStr.substring(1);
         }
@@ -307,7 +301,7 @@
         return { quotientStr, steps, digits, decimalPos };
     }
 
-    // --- MOTOR DE DIBUIX (GRAELLA) ---
+    // --- MOTOR DE DIBUIX ---
     function renderDivision(containerId, dividend, divisor, showSubtraction) {
         const container = document.getElementById(containerId);
         if (!container) return;
@@ -317,17 +311,20 @@
         const divStr = dividend.toString().replace('.', ',');
         const divisorStr = divisor.toString();
         
-        const totalCols = divStr.length + 1 + divisorStr.length; 
+        // CORRECCIÓ CLAU: L'amplada és el màxim entre el divisor i el quocient
+        // Si el quocient és llarg (ex: 711,5), el grid necessita més columnes a la dreta
+        const rightSideWidth = Math.max(divisorStr.length, sim.quotientStr.length);
+        const totalCols = divStr.length + 1 + rightSideWidth; 
+        
         container.style.gridTemplateColumns = `repeat(${totalCols}, 25px)`;
 
-        // Buffer per guardar les cel·les
         let rows = [];
         function setCell(r, c, text, classes=[]) {
             if (!rows[r]) rows[r] = [];
             rows[r][c] = { text, classes };
         }
 
-        // --- FILA 0: ENUNCIAT ---
+        // FILA 0: ENUNCIAT
         let col = 0;
         for (let char of divStr) { setCell(0, col++, char); }
         setCell(0, col, "", ['border-left', 'border-bottom']);
@@ -335,14 +332,14 @@
         col++;
         for (let char of divisorStr) { setCell(0, col++, char, ['border-bottom']); }
         
-        // --- FILA 1: QUOCIENT ---
+        // FILA 1: QUOCIENT
         let qStrFormatted = sim.quotientStr.replace('.', ',');
         col = sepCol + 1;
         for (let char of qStrFormatted) {
             setCell(1, col++, char, ['quotient-res']);
         }
 
-        // --- MAPEJAT DE COLUMNES ---
+        // MAPEJAT
         let mapDigitIndexToCol = [];
         let currentStringIdx = 0;
         for (let i=0; i<sim.digits.length; i++) {
@@ -356,15 +353,13 @@
         sim.steps.forEach((step, idx) => {
             const colIdx = mapDigitIndexToCol[step.colIndex];
 
-            // Si el quocient és 0, no dibuixem resta ni residu nou,
-            // només baixem la següent xifra al costat de l'actual.
-            if (step.qDigit === 0) {
+            // Si el quocient és 0, només baixem xifra al costat (visualment més net)
+            if (step.qDigit === 0 && idx < sim.steps.length - 1) {
                 if (step.droppedDigit !== undefined) {
                     let nextCol = mapDigitIndexToCol[step.colIndex + 1];
-                    // Pintem a la fila actual
                     setCell(currentRow, nextCol, step.droppedDigit);
                 }
-                return; 
+                return;
             }
 
             if (showSubtraction) {
@@ -376,7 +371,6 @@
                 for (let i=0; i<prodStr.length; i++) {
                     setCell(currentRow, startCol + i, prodStr[i], ['faded', 'border-bottom']); 
                 }
-                
                 currentRow++;
 
                 // Residu
@@ -389,7 +383,9 @@
                 // Baixar xifra
                 if (step.droppedDigit !== undefined) {
                     let nextCol = mapDigitIndexToCol[step.colIndex + 1];
-                    setCell(currentRow, nextCol, step.droppedDigit);
+                    if (nextCol !== undefined) {
+                        setCell(currentRow, nextCol, step.droppedDigit);
+                    }
                 }
 
             } else {
@@ -404,12 +400,14 @@
 
                 if (step.droppedDigit !== undefined) {
                     let nextCol = mapDigitIndexToCol[step.colIndex + 1];
-                    setCell(currentRow, nextCol, step.droppedDigit);
+                    if (nextCol !== undefined) {
+                        setCell(currentRow, nextCol, step.droppedDigit);
+                    }
                 }
             }
         });
 
-        // --- CONVERTIR A DOM ---
+        // DOM
         const maxR = rows.length;
         container.style.gridTemplateRows = `repeat(${maxR}, 32px)`;
 
@@ -427,10 +425,8 @@
         }
     }
 
-    // Inicialització al carregar
     window.onload = generate;
     
-    // Suport per Enter
     document.querySelectorAll('.input-mini').forEach(input => {
         input.addEventListener('keypress', function (e) {
             if (e.key === 'Enter') generate();
