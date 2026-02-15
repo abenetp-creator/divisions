@@ -116,15 +116,15 @@
     </div>
 
     <div class="horizontal-box">
-        <span id="q-dividend">...</span> 
+        <span id="q-dividend">0</span> 
         <span class="operator">÷</span> 
-        <span id="q-divisor">...</span> 
+        <span id="q-divisor">0</span> 
         <span>=</span>
-        <input type="text" id="user-ans" autocomplete="off" placeholder="?">
+        <input type="text" id="user-ans" autocomplete="off" placeholder="Quocient">
     </div>
 
-    <button type="button" class="btn-main btn-check" onclick="comprovarResultat()">Comprova</button>
-    <button type="button" class="btn-main btn-next" onclick="nouExercici()">Nova Operació</button>
+    <button type="button" class="btn-main btn-check" onclick="check()">Comprova</button>
+    <button type="button" class="btn-main btn-next" onclick="generate()">Nova Operació</button>
 
     <div id="msg" class="feedback"></div>
 
@@ -148,11 +148,10 @@
     let dividendNum = 0;
     let divisorNum = 1;
 
-    // Funció auxiliar per generar números
+    // --- GENERACIÓ DE NÚMEROS ---
     function generateRandomByDigits(intDigits, decDigits) {
-        // Valors per defecte si falla l'input
-        if (!intDigits || isNaN(intDigits) || intDigits < 1) intDigits = 1;
-        if (!decDigits || isNaN(decDigits) || decDigits < 0) decDigits = 0;
+        if (!intDigits || intDigits < 1) intDigits = 1;
+        if (!decDigits || decDigits < 0) decDigits = 0;
 
         const minInt = Math.pow(10, intDigits - 1);
         const maxInt = Math.pow(10, intDigits) - 1;
@@ -163,6 +162,7 @@
         let decimalStr = "";
         for (let i = 0; i < decDigits; i++) {
             if (i === decDigits - 1) {
+                // Evitem que l'últim decimal siga 0 per no perdre longitud visual
                 decimalStr += Math.floor(Math.random() * 9) + 1; 
             } else {
                 decimalStr += Math.floor(Math.random() * 10);
@@ -171,100 +171,98 @@
         return parseFloat(`${integerPart}.${decimalStr}`);
     }
 
-    // Funció principal per generar la divisió
-    function nouExercici() {
-        console.log("Generant nova operació...");
-        
-        // Obtenir valors dels inputs amb protecció
-        const dIntEl = document.getElementById('d-int');
-        const dDecEl = document.getElementById('d-dec');
-        const divIntEl = document.getElementById('div-int');
+    // --- FUNCIÓ PRINCIPAL: GENERAR OPERACIÓ ---
+    function generate() {
+        try {
+            const dIntInput = document.getElementById('d-int');
+            const dDecInput = document.getElementById('d-dec');
+            const divIntInput = document.getElementById('div-int');
 
-        const cfgDividendInt = dIntEl ? parseInt(dIntEl.value) : 3;
-        const cfgDividendDec = dDecEl ? parseInt(dDecEl.value) : 0;
-        const cfgDivisorInt = divIntEl ? parseInt(divIntEl.value) : 1;
+            const cfgDividendInt = dIntInput ? (parseInt(dIntInput.value) || 3) : 3;
+            const cfgDividendDec = dDecInput ? (parseInt(dDecInput.value) || 0) : 0;
+            const cfgDivisorInt = divIntInput ? (parseInt(divIntInput.value) || 1) : 1;
 
-        // Generar números
-        dividendNum = generateRandomByDigits(cfgDividendInt, cfgDividendDec);
-        
-        do {
-            divisorNum = generateRandomByDigits(cfgDivisorInt, 0);
-        } while (divisorNum === 0);
+            dividendNum = generateRandomByDigits(cfgDividendInt, cfgDividendDec);
+            
+            do {
+                divisorNum = generateRandomByDigits(cfgDivisorInt, 0);
+            } while (divisorNum === 0);
 
-        // Actualitzar pantalla
-        const divLabel = document.getElementById('q-dividend');
-        const divisorLabel = document.getElementById('q-divisor');
-        const userInput = document.getElementById('user-ans');
-        const msg = document.getElementById('msg');
-        const solBox = document.getElementById('sol-box');
-
-        if(divLabel) divLabel.innerText = dividendNum.toString().replace('.', ',');
-        if(divisorLabel) divisorLabel.innerText = divisorNum;
-        
-        if(userInput) {
-            userInput.value = '';
-            userInput.focus();
+            document.getElementById('q-dividend').innerText = dividendNum.toString().replace('.', ',');
+            document.getElementById('q-divisor').innerText = divisorNum;
+            
+            const userAns = document.getElementById('user-ans');
+            userAns.value = '';
+            document.getElementById('msg').innerText = '';
+            document.getElementById('sol-box').classList.add('hidden');
+            userAns.focus();
+        } catch(e) {
+            console.error("Error generant:", e);
         }
-        if(msg) msg.innerText = '';
-        if(solBox) solBox.classList.add('hidden');
     }
 
-    // Funció per comprovar
-    function comprovarResultat() {
-        const userEl = document.getElementById('user-ans');
-        if (!userEl) return;
+    // --- FUNCIÓ COMPROVAR ---
+    function check() {
+        try {
+            const userEl = document.getElementById('user-ans');
+            const userStr = userEl.value.replace(',', '.');
+            const userVal = parseFloat(userStr);
+            
+            const sim = simulateDivision(dividendNum, divisorNum); 
+            const correctVal = parseFloat(sim.quotientStr);
 
-        const userStr = userEl.value.replace(',', '.');
-        const userVal = parseFloat(userStr);
-        
-        const sim = simulateDivision(dividendNum, divisorNum); 
-        const correctVal = parseFloat(sim.quotientStr);
+            const msg = document.getElementById('msg');
+            
+            if (!isNaN(userVal) && Math.abs(userVal - correctVal) < 0.0000001) {
+                msg.innerText = "¡Excel·lent! Resposta correcta. 🎉";
+                msg.style.color = "#2ecc71";
+            } else {
+                msg.innerHTML = `Incorrecte. El resultat és <span>${sim.quotientStr.replace('.', ',')}</span>`;
+                msg.style.color = "#e74c3c";
+            }
 
-        const msg = document.getElementById('msg');
-        
-        if (!isNaN(userVal) && Math.abs(userVal - correctVal) < 0.0000001) {
-            msg.innerText = "¡Excel·lent! Resposta correcta. 🎉";
-            msg.style.color = "#2ecc71";
-        } else {
-            msg.innerHTML = `Incorrecte.`;
-            msg.style.color = "#e74c3c";
+            renderDivision('grid-direct', dividendNum, divisorNum, false);
+            renderDivision('grid-sub', dividendNum, divisorNum, true);
+            document.getElementById('sol-box').classList.remove('hidden');
+        } catch(e) {
+            console.error("Error comprovant:", e);
         }
-
-        renderDivision('grid-direct', dividendNum, divisorNum, false);
-        renderDivision('grid-sub', dividendNum, divisorNum, true);
-        document.getElementById('sol-box').classList.remove('hidden');
     }
 
-    // Lògica matemàtica de la divisió
+    // --- MOTOR MATEMÀTIC DE LA DIVISIÓ ---
     function simulateDivision(dividend, divisor) {
-        const divStr = dividend.toString();
+        const divStrFull = dividend.toString();
         let digits = [];
         let decimalPos = -1;
 
-        for (let i = 0; i < divStr.length; i++) {
-            if (divStr[i] === '.') {
+        // Convertir a array de dígits i detectar coma
+        for (let i = 0; i < divStrFull.length; i++) {
+            if (divStrFull[i] === '.') {
                 decimalPos = i; 
             } else {
-                digits.push(parseInt(divStr[i]));
+                digits.push(parseInt(divStrFull[i]));
             }
         }
 
-        let currentVal = 0;
+        let steps = [];
         let quotientStr = "";
-        let steps = []; 
-
         let pointer = 0;
+        let currentVal = digits[0]; 
 
+        // -- PAS PREVI: AGRUPAMENT INICIAL --
+        // Si el primer dígit és menor que el divisor i tenim més números abans de la coma,
+        // agafem dos dígits d'entrada.
+        const digitsBeforeDecimal = (decimalPos === -1) ? digits.length : decimalPos;
+        
+        if (currentVal < divisor && digitsBeforeDecimal > 1) {
+            pointer++;
+            currentVal = (currentVal * 10) + digits[pointer];
+        }
+
+        // -- BUCLE PRINCIPAL --
         while (pointer < digits.length) {
-            let digit = digits[pointer];
             
-            if (decimalPos !== -1 && pointer === (decimalPos)) {
-                 if (quotientStr === "") quotientStr += "0";
-                 if (!quotientStr.includes('.')) quotientStr += ".";
-            }
-            
-            currentVal = (currentVal * 10) + digit;
-            
+            // Càlcul
             let qDigit = Math.floor(currentVal / divisor);
             let product = qDigit * divisor;
             let remainder = currentVal - product;
@@ -274,23 +272,42 @@
                 qDigit: qDigit,
                 product: product,
                 remainder: remainder,
-                droppedDigit: digit,
                 colIndex: pointer
             });
 
             quotientStr += qDigit;
-            currentVal = remainder;
+
+            // Preparar següent pas
             pointer++;
+            
+            // Comprovar si hem de posar coma AL QUOCIENT
+            // Si hem passat la posició decimal original
+            if (decimalPos !== -1 && pointer === decimalPos) {
+                 if (quotientStr === "") quotientStr += "0";
+                 if (!quotientStr.includes('.')) quotientStr += ".";
+            }
+
+            // Si ja no queden dígits, acabem
+            if (pointer >= digits.length) break;
+
+            // Baixar següent xifra
+            let nextDigit = digits[pointer];
+            
+            // Guardar quina xifra baixa per dibuixar-la després
+            steps[steps.length - 1].droppedDigit = nextDigit;
+
+            currentVal = (remainder * 10) + nextDigit;
         }
 
-        if (quotientStr.startsWith("0") && quotientStr[1] !== "." && quotientStr.length > 1) {
-            quotientStr = quotientStr.replace(/^0+/, '');
+        // Neteja final (treure 0 a l'esquerra si no és 0.xx)
+        if (quotientStr.length > 1 && quotientStr.startsWith('0') && quotientStr[1] !== '.') {
+            quotientStr = quotientStr.substring(1);
         }
 
         return { quotientStr, steps, digits, decimalPos };
     }
 
-    // Dibuixar la graella
+    // --- MOTOR DE DIBUIX (GRAELLA) ---
     function renderDivision(containerId, dividend, divisor, showSubtraction) {
         const container = document.getElementById(containerId);
         if (!container) return;
@@ -301,17 +318,16 @@
         const divisorStr = divisor.toString();
         
         const totalCols = divStr.length + 1 + divisorStr.length; 
-        
         container.style.gridTemplateColumns = `repeat(${totalCols}, 25px)`;
 
-        // --- BUFFER GRID ---
+        // Buffer per guardar les cel·les
         let rows = [];
         function setCell(r, c, text, classes=[]) {
             if (!rows[r]) rows[r] = [];
             rows[r][c] = { text, classes };
         }
 
-        // CAPÇALERA
+        // --- FILA 0: ENUNCIAT ---
         let col = 0;
         for (let char of divStr) { setCell(0, col++, char); }
         setCell(0, col, "", ['border-left', 'border-bottom']);
@@ -319,14 +335,14 @@
         col++;
         for (let char of divisorStr) { setCell(0, col++, char, ['border-bottom']); }
         
-        // QUOCIENT
+        // --- FILA 1: QUOCIENT ---
         let qStrFormatted = sim.quotientStr.replace('.', ',');
         col = sepCol + 1;
         for (let char of qStrFormatted) {
             setCell(1, col++, char, ['quotient-res']);
         }
 
-        // PASSOS
+        // --- MAPEJAT DE COLUMNES ---
         let mapDigitIndexToCol = [];
         let currentStringIdx = 0;
         for (let i=0; i<sim.digits.length; i++) {
@@ -340,19 +356,19 @@
         sim.steps.forEach((step, idx) => {
             const colIdx = mapDigitIndexToCol[step.colIndex];
 
-            // SI EL QUOCIENT ÉS 0: No baixem fila, només posem la següent xifra al costat
+            // Si el quocient és 0, no dibuixem resta ni residu nou,
+            // només baixem la següent xifra al costat de l'actual.
             if (step.qDigit === 0) {
-                if (idx < sim.steps.length - 1) {
-                    const nextStep = sim.steps[idx+1];
-                    const nextDigit = nextStep.droppedDigit;
-                    const nextDigitCol = mapDigitIndexToCol[nextStep.colIndex];
-                    setCell(currentRow, nextDigitCol, nextDigit);
+                if (step.droppedDigit !== undefined) {
+                    let nextCol = mapDigitIndexToCol[step.colIndex + 1];
+                    // Pintem a la fila actual
+                    setCell(currentRow, nextCol, step.droppedDigit);
                 }
                 return; 
             }
 
             if (showSubtraction) {
-                if (idx > 0) currentRow++;
+                if (idx > 0) currentRow++; 
 
                 // Resta
                 const prodStr = step.product.toString();
@@ -371,11 +387,9 @@
                 }
                 
                 // Baixar xifra
-                if (idx < sim.steps.length - 1) {
-                    const nextStep = sim.steps[idx+1];
-                    const nextDigit = nextStep.droppedDigit;
-                    const nextDigitCol = mapDigitIndexToCol[nextStep.colIndex];
-                    setCell(currentRow, nextDigitCol, nextDigit);
+                if (step.droppedDigit !== undefined) {
+                    let nextCol = mapDigitIndexToCol[step.colIndex + 1];
+                    setCell(currentRow, nextCol, step.droppedDigit);
                 }
 
             } else {
@@ -388,16 +402,14 @@
                     setCell(currentRow, startCol + i, remStr[i]);
                 }
 
-                if (idx < sim.steps.length - 1) {
-                    const nextStep = sim.steps[idx+1];
-                    const nextDigit = nextStep.droppedDigit;
-                    const nextDigitCol = mapDigitIndexToCol[nextStep.colIndex];
-                    setCell(currentRow, nextDigitCol, nextDigit);
+                if (step.droppedDigit !== undefined) {
+                    let nextCol = mapDigitIndexToCol[step.colIndex + 1];
+                    setCell(currentRow, nextCol, step.droppedDigit);
                 }
             }
         });
 
-        // RENDER AL DOM
+        // --- CONVERTIR A DOM ---
         const maxR = rows.length;
         container.style.gridTemplateRows = `repeat(${maxR}, 32px)`;
 
@@ -415,15 +427,13 @@
         }
     }
 
-    // Inicialització segura
-    document.addEventListener('DOMContentLoaded', () => {
-        nouExercici();
-        
-        // Tecla Enter
-        document.querySelectorAll('.input-mini').forEach(input => {
-            input.addEventListener('keypress', function (e) {
-                if (e.key === 'Enter') nouExercici();
-            });
+    // Inicialització al carregar
+    window.onload = generate;
+    
+    // Suport per Enter
+    document.querySelectorAll('.input-mini').forEach(input => {
+        input.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') generate();
         });
     });
 
