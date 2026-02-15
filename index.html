@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Divisions</title>
+    <style>
+        /* ESTILS GENERALS */
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f6f8; display: flex; justify-content: center; padding: 20px; margin: 0; }
+        .card { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 900px; text-align: center; }
+        
+        h1 { color: #2c3e50; margin-bottom: 30px; }
+
+        /* CONFIGURACIÓ (Area Grisa) */
+        .config-panel {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            border: 1px solid #e9ecef;
+        }
+        .config-section h3 { font-size: 0.85rem; color: #adb5bd; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; margin-top: 0; font-weight: bold; }
+        .input-group { display: flex; gap: 15px; justify-content: center; }
+        .input-wrapper { display: flex; flex-direction: column; align-items: center; }
+        .input-wrapper label { font-size: 0.8rem; color: #6c757d; margin-bottom: 5px; font-weight: 600; }
+        .input-mini { 
+            width: 60px; height: 40px; 
+            font-size: 1.2rem; text-align: center; 
+            border: 2px solid #dee2e6; border-radius: 8px; 
+            color: #495057; font-weight: bold; outline: none; transition: 0.2s;
+        }
+        .input-mini:focus { border-color: #e67e22; }
+
+        /* ÀREA DE JOC (Groc) */
+        .game-area {
+            background-color: #fff9db; /* Groc suau */
+            border: 2px solid #ffe066;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            font-size: 2.5rem;
+            color: #343a40;
+            flex-wrap: wrap;
+        }
+        .symbol { color: #f08c00; font-weight: 900; }
+        #user-ans {
+            width: 180px; height: 60px;
+            font-size: 2rem; text-align: center;
+            border: 3px solid #ced4da; border-radius: 10px;
+            outline: none; background: white;
+        }
+        #user-ans:focus { border-color: #f08c00; }
+
+        /* BOTONS */
+        .btn-container { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; }
+        .btn {
+            padding: 14px 28px;
+            font-size: 1.1rem;
+            border: none; border-radius: 8px;
+            cursor: pointer; font-weight: bold; color: white;
+            transition: transform 0.1s, opacity 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .btn:active { transform: scale(0.96); }
+        .btn:hover { opacity: 0.95; transform: translateY(-1px); }
+        
+        .btn-check { background-color: #e67e22; } /* Taronja */
+        .btn-new { background-color: #0ca678; }   /* Verd */
+
+        /* MISSATGE RESULTAT */
+        #msg { min-height: 30px; font-size: 1.4rem; font-weight: bold; margin-bottom: 20px; }
+
+        /* SOLUCIONARI */
+        .solution-box { display: none; margin-top: 30px; border-top: 2px solid #f1f3f5; padding-top: 20px; }
+        .grid-container { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 30px; }
+        
+        .sol-col h4 { text-align: center; color: #868e96; text-transform: uppercase; margin-bottom: 15px; }
+        
+        /* Graella Matemàtica */
+        .calc-grid {
+            display: grid;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 1.5rem;
+            line-height: 1.5rem;
+            justify-content: center;
+        }
+        .c { 
+            width: 20px; height: 30px; 
+            display: flex; align-items: center; justify-content: center; 
+        }
+        
+        .b-left { border-left: 2px solid #333; }
+        .b-bottom { border-bottom: 2px solid #333; }
+        .quotient-color { color: #1c7ed6; }
+        .sub-color { color: #adb5bd; font-size: 0.9em; }
+
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>Practicar Divisions</h1>
+
+    <div class="config-panel">
+        <div class="config-section">
+            <h3>Dividend</h3>
+            <div class="input-group">
+                <div class="input-wrapper">
+                    <label>Xifres</label>
+                    <input type="number" id="inp-d-int" class="input-mini" value="4" min="1" max="6">
+                </div>
+                <div class="input-wrapper">
+                    <label>Decimals</label>
+                    <input type="number" id="inp-d-dec" class="input-mini" value="1" min="0" max="4">
+                </div>
+            </div>
+        </div>
+
+        <div class="config-section">
+            <h3>Divisor</h3>
+            <div class="input-group">
+                <div class="input-wrapper">
+                    <label>Xifres</label>
+                    <input type="number" id="inp-div-int" class="input-mini" value="2" min="1" max="3">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="game-area">
+        <span id="display-dividend">0</span>
+        <span class="symbol">÷</span>
+        <span id="display-divisor">0</span>
+        <span class="symbol">=</span>
+        <input type="text" id="user-ans" placeholder="?" autocomplete="off">
+    </div>
+
+    <div class="btn-container">
+        <button class="btn btn-check" onclick="check()">Comprova</button>
+        <button class="btn btn-new" onclick="generate()">Nova Operació</button>
+    </div>
+
+    <div id="msg"></div>
+
+    <div id="solution-area" class="solution-box">
+        <div class="grid-container">
+            <div class="sol-col">
+                <h4>Càlcul Mental</h4>
+                <div id="grid-direct" class="calc-grid"></div>
+            </div>
+            <div class="sol-col">
+                <h4>Mètode amb Resta</h4>
+                <div id="grid-sub" class="calc-grid"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Variables globals per guardar els números actuals
+    let currentDividend, currentDivisor;
+
+    // Funció auxiliar per generar números aleatoris
+    function getRandomNumber(digits, decimals) {
+        let min = Math.pow(10, digits - 1);
+        let max = Math.pow(10, digits) - 1;
+        let intPart = Math.floor(Math.random() * (max - min + 1)) + min;
+        
+        if (decimals > 0) {
+            let decPart = "";
+            for(let i=0; i<decimals; i++) {
+                // Assegurem que l'últim decimal no sigui 0 per evitar confusions
+                if(i === decimals - 1) decPart += Math.floor(Math.random() * 9) + 1;
+                else decPart += Math.floor(Math.random() * 10);
+            }
+            return parseFloat(intPart + "." + decPart);
+        }
+        return intPart;
+    }
+
+    // FUNCIÓ PRINCIPAL: GENERAR NOVA OPERACIÓ
+    function generate() {
+        // 1. Llegim la configuració
+        let dInt = parseInt(document.getElementById('inp-d-int').value) || 3;
+        let dDec = parseInt(document.getElementById('inp-d-dec').value) || 0;
+        let divInt = parseInt(document.getElementById('inp-div-int').value) || 1;
+
+        // 2. Generem números
+        currentDividend = getRandomNumber(dInt, dDec);
+        do {
+            currentDivisor = getRandomNumber(divInt, 0);
+        } while (currentDivisor === 0); // Evitem dividir per 0
+
+        // 3. Mostrem a la pantalla
+        document.getElementById('display-dividend').innerText = currentDividend.toString().replace('.', ',');
+        document.getElementById('display-divisor').innerText = currentDivisor;
+
+        // 4. Resetegem camps
+        document.getElementById('user-ans').value = '';
+        document.getElementById('msg').innerText = '';
+        document.getElementById('solution-area').style.display = 'none';
+        document.getElementById('user-ans').focus();
+    }
+
+    // FUNCIÓ: COMPROVAR RESULTAT
+    function check() {
+        let userStr = document.getElementById('user-ans').value.replace(',', '.');
+        let userVal = parseFloat(userStr);
+
+        // Calculem el resultat real simulant la divisió
+        let sim = simulateDivision(currentDividend, currentDivisor);
+        let correctVal = parseFloat(sim.quotientStr);
+
+        let msgEl = document.getElementById('msg');
+
+        if (!isNaN(userVal) && Math.abs(userVal - correctVal) < 0.0000001) {
+            msgEl.innerHTML = "🎉 Molt bé! És correcte.";
+            msgEl.style.color = "#0ca678";
+        } else {
+            msgEl.innerHTML = "Incorrecte. Mira la solució avall.";
+            msgEl.style.color = "#fa5252";
+        }
+
+        // Dibuixem les solucions
+        renderGrid('grid-direct', currentDividend, currentDivisor, false);
+        renderGrid('grid-sub', currentDividend, currentDivisor, true);
+        document.getElementById('solution-area').style.display = 'block';
+    }
+
+    // MOTOR MATEMÀTIC DE LA DIVISIÓ
+    function simulateDivision(dividend, divisor) {
+        let divStr = dividend.toString();
+        let digits = [];
+        let decimalPos = -1;
+
+        // Convert
